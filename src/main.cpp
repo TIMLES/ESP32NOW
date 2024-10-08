@@ -1,67 +1,84 @@
 #include <WiFi.h>
 #include <esp_now.h>
 
-// è®¾ç½®æ•°æ®ç»“æ„ä½“
-typedef struct struct_message {
-  double shuzi;
+// ÉèÖÃÊı¾İ½á¹¹Ìå
+typedef struct struct_message
+{
+  String call;
+  double data;
 } struct_message;
 
-struct_message myData;//æ•°æ®å¯¹è±¡ä¸ºmyData
+struct_message myData; // Êı¾İ¶ÔÏóÎªmyData
 
-// æ¥æ”¶è®¾å¤‡çš„ MAC åœ°å€
-uint8_t OtheAddrees[] = { 0x64, 0xE8, 0x33, 0x7E, 0xB3, 0x0C };
-//æœ¬æœºåœ°å€
-uint8_t myAddrees[] = { 0x64, 0xE8, 0x33, 0x89, 0xCA, 0xC8 };
+// ½ÓÊÕÉè±¸µÄ MAC µØÖ·
+uint8_t OtheAddrees[] = {0x64, 0xE8, 0x33, 0x7E, 0xB3, 0x0C};
+// ±¾»úµØÖ·
+uint8_t myAddrees[] = {0x64, 0xE8, 0x33, 0x89, 0xCA, 0xC8};
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
-void setup() {
+void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len);
+void setup()
+{
   Serial.begin(9600);
 
-  // åˆå§‹åŒ– ESP-NOW
+  // ³õÊ¼»¯ ESP-NOW
   WiFi.mode(WIFI_STA);
-  if (esp_now_init() != ESP_OK) {//ESP_OKè¡¨ç¤ºæ— é”™è¯¯å‡½æ•°è¿”å›
+  if (esp_now_init() != ESP_OK)
+  { // ESP_OK±íÊ¾ÎŞ´íÎóº¯Êı·µ»Ø
     Serial.println("Error initializing ESP-NOW");
     return;
   }
   Serial.print("ESP32 Board MAC Address:  ");
   Serial.println(WiFi.macAddress());
-  
-  // è®¾ç½®å‘é€æ•°æ®å›è°ƒå‡½æ•°
+
+  // ÉèÖÃ·¢ËÍÊı¾İ»Øµ÷º¯Êı
   esp_now_register_send_cb(OnDataSent);
 
-  // ç»‘å®šæ•°æ®æ¥æ”¶ç«¯
+  // °ó¶¨Êı¾İ½ÓÊÕ¶Ë
   esp_now_peer_info_t peerInfo;
   memcpy(peerInfo.peer_addr, OtheAddrees, 6);
   peerInfo.channel = 0;
-  peerInfo.encrypt = false;//å‘é€æ•°æ®æ˜¯å¦åŠ å¯†
+  peerInfo.encrypt = false; // ·¢ËÍÊı¾İÊÇ·ñ¼ÓÃÜ
 
-  // æ£€æŸ¥è®¾å¤‡æ˜¯å¦é…å¯¹æˆåŠŸ
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+  // ¼ì²éÉè±¸ÊÇ·ñÅä¶Ô³É¹¦
+  if (esp_now_add_peer(&peerInfo) != ESP_OK)
+  {
     Serial.println("Failed to add peer");
     return;
   }
 }
-
+String AA;bool kk=0; esp_err_t result;
 int i = 1;
-void loop() {
-  // è®¾ç½®è¦å‘é€çš„æ•°æ®
-  myData.shuzi = i;
+void loop()
+{
 
-  // å‘é€æ•°æ®
-  esp_err_t result = esp_now_send(OtheAddrees, (uint8_t *)&myData, sizeof(myData));
-
-  // æ£€æŸ¥æ•°æ®æ˜¯å¦å‘é€æˆåŠŸ
-  if (result == ESP_OK) {
+  if (Serial.available() > 0)
+  {
+    String AA = Serial.readString();
+    delay(50);
+    result = esp_now_send(OtheAddrees, (uint8_t *)&myData, sizeof(myData));
+    kk=0;
+      if (result == ESP_OK)
+  {
     Serial.println("Sent with success");
-  } else {
+  }
+  else
+  {
     Serial.println("Error sending the data");
   }
-  delay(5000);
+  
+  }
+  // ÉèÖÃÒª·¢ËÍµÄÊı¾İ
+  myData.call= AA;
+  myData.data = i;
+  
+  delay(500);
   i++;
 }
 
-// æ•°æ®å‘é€å›è°ƒå‡½æ•°
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+// Êı¾İ·¢ËÍ»Øµ÷º¯Êı
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
   char macStr[18];
   Serial.print("Packet to: ");
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
@@ -70,4 +87,19 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.print("Send status: ");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
   Serial.println();
+}
+
+void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len) {
+  memcpy(&myData, data, sizeof(myData));
+  if(kk){
+  char macStr[18];
+  Serial.print("Packet from: ");
+  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+  mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+  Serial.println(macStr);
+  Serial.print("×´Ì¬:");
+  Serial.println(myData.call);
+  kk=1;
+  }
+  Serial.println(myData.data);
 }
