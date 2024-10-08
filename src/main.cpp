@@ -1,18 +1,18 @@
 #include <WiFi.h>
 #include <esp_now.h>
 
-// ÉèÖÃÊı¾İ½á¹¹Ìå
+// è®¾ç½®æ•°æ®ç»“æ„ä½“
 typedef struct struct_message
 {
   String call;
   double data;
 } struct_message;
 
-struct_message myData; // Êı¾İ¶ÔÏóÎªmyData
+struct_message myData; // æ•°æ®å¯¹è±¡ä¸ºmyData
 
-// ½ÓÊÕÉè±¸µÄ MAC µØÖ·
+// æ¥æ”¶è®¾å¤‡çš„ MAC åœ°å€
 uint8_t OtheAddrees[] = {0x64, 0xE8, 0x33, 0x7E, 0xB3, 0x0C};
-// ±¾»úµØÖ·
+// æœ¬æœºåœ°å€
 uint8_t myAddrees[] = {0x64, 0xE8, 0x33, 0x89, 0xCA, 0xC8};
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
@@ -21,26 +21,26 @@ void setup()
 {
   Serial.begin(9600);
 
-  // ³õÊ¼»¯ ESP-NOW
+  // åˆå§‹åŒ– ESP-NOW
   WiFi.mode(WIFI_STA);
   if (esp_now_init() != ESP_OK)
-  { // ESP_OK±íÊ¾ÎŞ´íÎóº¯Êı·µ»Ø
+  { // ESP_OKè¡¨ç¤ºæ— é”™è¯¯å‡½æ•°è¿”å›
     Serial.println("Error initializing ESP-NOW");
     return;
   }
   Serial.print("ESP32 Board MAC Address:  ");
   Serial.println(WiFi.macAddress());
 
-  // ÉèÖÃ·¢ËÍÊı¾İ»Øµ÷º¯Êı
+  // è®¾ç½®å‘é€æ•°æ®å›è°ƒå‡½æ•°
   esp_now_register_send_cb(OnDataSent);
 
-  // °ó¶¨Êı¾İ½ÓÊÕ¶Ë
+  // ç»‘å®šæ•°æ®æ¥æ”¶ç«¯
   esp_now_peer_info_t peerInfo;
   memcpy(peerInfo.peer_addr, OtheAddrees, 6);
   peerInfo.channel = 0;
-  peerInfo.encrypt = false; // ·¢ËÍÊı¾İÊÇ·ñ¼ÓÃÜ
+  peerInfo.encrypt = false; // å‘é€æ•°æ®æ˜¯å¦åŠ å¯†
 
-  // ¼ì²éÉè±¸ÊÇ·ñÅä¶Ô³É¹¦
+  // æ£€æŸ¥è®¾å¤‡æ˜¯å¦é…å¯¹æˆåŠŸ
   if (esp_now_add_peer(&peerInfo) != ESP_OK)
   {
     Serial.println("Failed to add peer");
@@ -68,7 +68,7 @@ void loop()
   }
   
   }
-  // ÉèÖÃÒª·¢ËÍµÄÊı¾İ
+  // è®¾ç½®è¦å‘é€çš„æ•°æ®
   myData.call= AA;
   myData.data = i;
   
@@ -76,7 +76,7 @@ void loop()
   i++;
 }
 
-// Êı¾İ·¢ËÍ»Øµ÷º¯Êı
+// æ•°æ®å‘é€å›è°ƒå‡½æ•°
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
   char macStr[18];
@@ -97,7 +97,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len) {
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
   mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
   Serial.println(macStr);
-  Serial.print("×´Ì¬:");
+  Serial.print("çŠ¶æ€:");
   Serial.println(myData.call);
   kk=1;
   }
