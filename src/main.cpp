@@ -4,14 +4,20 @@
 #include <MySQL_Cursor.h>
 
 //wifi
-const char ssid[]     = "RAY 0893";// change to your WIFI SSID
+const char ssid[]     = "DESKTOP-LQ2U3EJ 3891";// change to your WIFI SSID
 const char password[] = "12345678";// change to your WIFI Password
 
 //
-IPAddress server_addr(121,41,116,214);// 服务器地址，注意是逗号
+// IPAddress server_addr(121,41,116,214);// 服务器地址，注意是逗号
+// int MYSQLPort =3306;   //端口
+// char user[] = "panray";//用户名
+// char pass[] = "WjCNlhdC4c07mDkb";// 密码
+
+IPAddress server_addr(192,168,98,1);// 服务器地址，注意是逗号
 int MYSQLPort =3306;   //端口
-char user[] = "panray";//用户名
-char pass[] = "WjCNlhdC4c07mDkb";// 密码
+char user[] = "root";//用户名
+char pass[] = "17860715233";// 密码
+char db[] = "test";// 密码
 
 WiFiClient client;            
 MySQL_Connection conn((Client *)&client);
@@ -36,7 +42,7 @@ void setup() {
   Serial.println(WiFi.localIP());
   
   //连接 mysql server
-  if (conn.connect(server_addr, 3306, user, pass)) {
+  if (conn.connect(server_addr, 3306, user, pass, db)) {
     Serial.println("Connectio SQL OK!.");
      delay(1000);
   }
@@ -45,7 +51,7 @@ void setup() {
   }
   delay(2000);  
   //插入数据库的名称，改变其值
-  char INSERT_SQL[] = "INSERT INTO timles.datalog (temp,humd) VALUES ('35','60')";//傳入的值固定為溫度,濕度為35,60
+  char INSERT_SQL[] = "INSERT INTO test.datalog (temp,humd) VALUES ('35','60')";//傳入的值固定為溫度,濕度為35,60
   MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);  
   cur_mem->execute(INSERT_SQL);//发送
   delete cur_mem;
