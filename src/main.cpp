@@ -1,103 +1,58 @@
-#include <Arduino.h>
+//MySQL连接测试
 #include <WiFi.h>
-#include "PubSubClient.h"   ////A client library for MQTT messaging.
+#include <MySQL_Connection.h>
+#include <MySQL_Cursor.h>
 
+//wifi
+const char ssid[]     = "RAY 0893";// change to your WIFI SSID
+const char password[] = "12345678";// change to your WIFI Password
 
-/***************************************** 需要更改/
-/* 连接WIFI SSID和密码 */
-#define WIFI_SSID         "DESKTOP-LQ2U3EJ 3891"
-#define WIFI_PASSWD       "12345678"
-/* 设备的三元组信息*/
-#define PRODUCT_KEY       "a1W3S1waPyr"
-#define DEVICE_NAME       "raypan"
-#define DEVICE_SECRET     "10748431b4e6443f67385fef02b8d269"
-#define REGION_ID         "cn-shanghai"
-//阿里云客户端id与密码
-#define CLIENT_ID         "a1W3S1waPyr.raypan|securemode=2,signmethod=hmacsha256,timestamp=1728540738182|"
-#define MQTT_PASSWD       "6ae47a97b5a4b0b34a6ddaa5ffae8f7807289c85843842f67336569e7d8b9bf1"
-//宏定义订阅主题
-#define ALINK_BODY_FORMAT         "{\"id\":\"raypan\",\"version\":\"1.0\",\"method\":\"thing.event.property.post\",\"params\":%s}"
-#define ALINK_TOPIC_PROP_POST     "/sys/" PRODUCT_KEY "/" DEVICE_NAME "/thing/event/property/post"
+//
+IPAddress server_addr(121,41,116,214);// 服务器地址，注意是逗号
+int MYSQLPort =3306;   //端口
+char user[] = "panray";//用户名
+char pass[] = "WjCNlhdC4c07mDkb";// 密码
 
-/* 线上环境域名和端口号，不需要改 */
-#define MQTT_SERVER       PRODUCT_KEY".iot-as-mqtt."REGION_ID ".aliyuncs.com"
-#define MQTT_PORT         1883
-#define MQTT_USRNAME      DEVICE_NAME"&"PRODUCT_KEY
+WiFiClient client;            
+MySQL_Connection conn((Client *)&client);
 
-unsigned long lastMs = 0;
-
-WiFiClient espClient;
-PubSubClient  client(espClient);
-
-float soil_data ;  
-float tep;  
-
-//连接wifi
-void wifiInit()
-{
-    WiFi.begin(WIFI_SSID, WIFI_PASSWD);
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(1000);
-        Serial.println("WiFi not Connect");
-    }
-}
-
-//mqtt连接
-void mqttCheckConnect()
-{
-    while (!client.connected())
-    {
-        Serial.println("Connecting to MQTT Server ...");
-        if(client.connect(CLIENT_ID, MQTT_USRNAME, MQTT_PASSWD))
-        {
-          Serial.println("MQTT Connected!");
-        }
-        else{
-           Serial.print("MQTT Connect err:");
-            Serial.println(client.state());
-            delay(5000);
-          }
-        
-    }
-}
-
-//上传温湿度、二氧化碳浓度
-void mqttIntervalPost()
-{
-    char param[32];
-    char jsonBuf[128];
-    
-    double AA=random(0,100);
-    soil_data = AA;   
-    sprintf(param, "{\"temperature\":%2f}", soil_data);
-    sprintf(jsonBuf, ALINK_BODY_FORMAT, param);
-    Serial.println(jsonBuf);
-    boolean b = client.publish(ALINK_TOPIC_PROP_POST, jsonBuf);
-    if(b){
-      Serial.println("publish Humidity success"); 
-    }else{
-      Serial.println("publish Humidity fail"); 
-    }
-}
-
-void setup()
-{
+void setup() {
   Serial.begin(115200);
-  //dht.begin();
-  wifiInit();
-  client.setServer(MQTT_SERVER, MQTT_PORT);   /* 连接MQTT服务器 */
+  delay(10);
+
+  Serial.println();
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  
+  WiFi.begin(ssid, password);  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");  
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  
+  //连接 mysql server
+  if (conn.connect(server_addr, 3306, user, pass)) {
+    Serial.println("Connectio SQL OK!.");
+     delay(1000);
+  }
+  else{
+    Serial.println("Connection failed.");
+  }
+  delay(2000);  
+  //插入数据库的名称，改变其值
+  char INSERT_SQL[] = "INSERT INTO timles.datalog (temp,humd) VALUES ('35','60')";//傳入的值固定為溫度,濕度為35,60
+  MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);  
+  cur_mem->execute(INSERT_SQL);//发送
+  delete cur_mem;
+  conn.close();                  // 断开连接
+  Serial.println("Data Saved.");//数据已保存
 }
 
-void loop()
-{
-      if (millis() - lastMs >= 5000)
-    {
-        lastMs = millis();
-        mqttCheckConnect(); 
-        /* 上报 */
-        mqttIntervalPost();
-    }
-    client.loop();
-    delay(2000);
-} 
+void loop() {
+//do nothing
+}
