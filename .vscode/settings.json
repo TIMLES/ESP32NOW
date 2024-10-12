@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "cstdio": "cpp"
+        "cstdio": "cpp",
+        "new": "cpp",
+        "random": "cpp",
+        "string": "cpp",
+        "array": "cpp",
+        "string_view": "cpp"
     }
 }
