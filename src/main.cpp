@@ -1,105 +1,55 @@
-#include <WiFi.h>
-#include <esp_now.h>
 
-// 设置数据结构体
-typedef struct struct_message
-{
-  String call;
-  double data;
-} struct_message;
+#include <WiFi.h>                  
+#include <MySQL_Connection.h>
+#include <MySQL_Cursor.h>
 
-struct_message myData; // 数据对象为myData
 
-// 接收设备的 MAC 地址
-uint8_t OtheAddrees[] = {0x64, 0xE8, 0x33, 0x7E, 0xB3, 0x0C};
-// 本机地址
-uint8_t myAddrees[] = {0x64, 0xE8, 0x33, 0x89, 0xCA, 0xC8};
+IPAddress server_addr(121,41,116,214);  // IP of the MySQL *server* here
+char user[] = "panray";              // MySQL user login username
+char password[] = "WjCNlhdC4c07mDkb";        // MySQL user login password
 
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
-void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len);
-void setup()
-{
-  Serial.begin(9600);
+// WiFi card example
+char ssid[] = "RAY 0893";    // your SSID
+char pass[] = "12345678";       // your SSID Password
+WiFiClient client;            // Use this for WiFi instead of EthernetClient
+MySQL_Connection conn((Client *)&client);
 
-  // 初始化 ESP-NOW
-  WiFi.mode(WIFI_STA);
-  if (esp_now_init() != ESP_OK)
-  { // ESP_OK表示无错误函数返回
-    Serial.println("Error initializing ESP-NOW");
-    return;
+void setup() {
+Serial.begin(9600);
+  delay(10);
+
+  Serial.println();
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  
+  WiFi.begin(ssid, pass);  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
-  Serial.print("ESP32 Board MAC Address:  ");
-  Serial.println(WiFi.macAddress());
+  Serial.println("");
+  Serial.println("WiFi connected");  
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  // End WiFi section
 
-  // 设置发送数据回调函数
-  esp_now_register_send_cb(OnDataSent);
-
-  // 绑定数据接收端
-  esp_now_peer_info_t peerInfo;
-  memcpy(peerInfo.peer_addr, OtheAddrees, 6);
-  peerInfo.channel = 0;
-  peerInfo.encrypt = false; // 发送数据是否加密
-
-  // 检查设备是否配对成功
-  if (esp_now_add_peer(&peerInfo) != ESP_OK)
-  {
-    Serial.println("Failed to add peer");
-    return;
-  }
-}
-String AA;bool kk=0; esp_err_t result;
-int i = 1;
-void loop()
-{
-
-  if (Serial.available() > 0)
-  {
-    String AA = Serial.readString();
-    delay(50);
-    result = esp_now_send(OtheAddrees, (uint8_t *)&myData, sizeof(myData));
-    kk=0;
-      if (result == ESP_OK)
-  {
-    Serial.println("Sent with success");
+  Serial.println("Connecting...");
+  if (conn.connect(server_addr, 3306, user, password)) {
+    Serial.println("OK!");
+    delay(1000);
   }
   else
-  {
-    Serial.println("Error sending the data");
-  }
-  
-  }
-  // 设置要发送的数据
-  myData.call= AA;
-  myData.data = i;
-  
-  delay(500);
-  i++;
+    Serial.println("Connection failed.");
+  delay(2000);  
+  //insert, change database name and values by string and char[]
+  char INSERT_SQL[] = "INSERT INTO timles.test (temp,humd) VALUES ('35','60')";//傳入的值固定為溫度,濕度為35,60
+  MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);  
+  cur_mem->execute(INSERT_SQL);//execute SQL
+  delete cur_mem;
+  conn.close();                  // close the connection
+  Serial.println("Data Saved.");
 }
 
-// 数据发送回调函数
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
-{
-  char macStr[18];
-  Serial.print("Packet to: ");
-  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-           mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  Serial.println(macStr);
-  Serial.print("Send status: ");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  Serial.println();
-}
-
-void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len) {
-  memcpy(&myData, data, sizeof(myData));
-  if(kk){
-  char macStr[18];
-  Serial.print("Packet from: ");
-  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-  mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  Serial.println(macStr);
-  Serial.print("状态:");
-  Serial.println(myData.call);
-  kk=1;
-  }
-  Serial.println(myData.data);
+void loop() {
 }
